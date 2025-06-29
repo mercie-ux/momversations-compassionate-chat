@@ -1,11 +1,11 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Heart, Baby, Coffee, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
+import { useMessages } from '@/hooks/useMessages';
 
-interface Message {
+interface LocalMessage {
   id: string;
   text: string;
   isUser: boolean;
@@ -13,17 +13,27 @@ interface Message {
 }
 
 const Index = () => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: "Hello beautiful mama! 💕 I'm here to support you through your motherhood journey. Whether you're expecting, a new mom, or navigating the ups and downs of raising little ones, I'm here to listen and help. What's on your heart today?",
-      isUser: false,
-      timestamp: new Date()
-    }
-  ]);
+  // Generate a session ID that persists for this browser session
+  const [sessionId] = useState(() => {
+    const stored = sessionStorage.getItem('momversation-session-id');
+    if (stored) return stored;
+    const newId = crypto.randomUUID();
+    sessionStorage.setItem('momversation-session-id', newId);
+    return newId;
+  });
+
+  const { messages: dbMessages, addMessage, isLoading } = useMessages(sessionId);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Convert database messages to local format for display
+  const messages: LocalMessage[] = dbMessages.map(msg => ({
+    id: msg.id,
+    text: msg.content,
+    isUser: msg.is_user,
+    timestamp: new Date(msg.created_at)
+  }));
 
   const quickTopics = [
     { icon: Baby, text: "New mom anxiety", color: "bg-pink-100 hover:bg-pink-200 text-pink-700" },
@@ -39,6 +49,14 @@ const Index = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Add welcome message if no messages exist and not loading
+  useEffect(() => {
+    if (!isLoading && messages.length === 0) {
+      const welcomeMessage = "Hello beautiful mama! 💕 I'm here to support you through your motherhood journey. Whether you're expecting, a new mom, or navigating the ups and downs of raising little ones, I'm here to listen and help. What's on your heart today?";
+      addMessage(welcomeMessage, false);
+    }
+  }, [isLoading, messages.length, addMessage]);
 
   const getBotResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
@@ -61,26 +79,15 @@ const Index = () => {
   const handleSendMessage = async (message: string) => {
     if (!message.trim()) return;
 
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: message,
-      isUser: true,
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
+    // Add user message to database
+    await addMessage(message, true);
     setInputMessage('');
     setIsTyping(true);
 
-    // Simulate typing delay
-    setTimeout(() => {
-      const botResponse: Message = {
-        id: (Date.now() + 1).toString(),
-        text: getBotResponse(message),
-        isUser: false,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botResponse]);
+    // Simulate typing delay and add bot response
+    setTimeout(async () => {
+      const botResponse = getBotResponse(message);
+      await addMessage(botResponse, false);
       setIsTyping(false);
     }, 1500);
   };
@@ -93,6 +100,17 @@ const Index = () => {
     e.preventDefault();
     handleSendMessage(inputMessage);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-rose-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading your conversation...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-purple-50 to-rose-50">

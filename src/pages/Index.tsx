@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useMessages } from '@/hooks/useMessages';
+import momSvg from '@/assets/momversation.svg';
 
 interface LocalMessage {
   id: string;
@@ -60,7 +61,7 @@ const Index = () => {
 
   const getBotResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
-    
+
     if (lowerMessage.includes('anxiety') || lowerMessage.includes('anxious') || lowerMessage.includes('worried')) {
       return "I hear you, mama. Anxiety is so common in motherhood - you're not alone in feeling this way. It's completely normal to worry about doing things 'right.' Remember: there's no perfect mother, but there are a million ways to be a great one. Take deep breaths, trust your instincts, and be gentle with yourself. What specific worries are weighing on you today? 💙";
     } else if (lowerMessage.includes('sleep') || lowerMessage.includes('tired') || lowerMessage.includes('exhausted')) {
@@ -117,6 +118,11 @@ const Index = () => {
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8 animate-fade-in">
+          <img
+            className="mx-auto mb-4 w-24 h-24"
+            src={momSvg}
+            alt="Momversation Logo"
+          />
           <h1 className="text-4xl font-bold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
             Momversation
           </h1>
@@ -134,17 +140,16 @@ const Index = () => {
                 className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
-                    message.isUser
+                  className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${message.isUser
                       ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
                       : 'bg-gray-100 text-gray-800 border'
-                  } transition-all duration-300 hover:scale-105`}
+                    } transition-all duration-300 hover:scale-105`}
                 >
                   <p className="text-sm leading-relaxed">{message.text}</p>
                 </div>
               </div>
             ))}
-            
+
             {isTyping && (
               <div className="flex justify-start animate-fade-in">
                 <div className="bg-gray-100 px-4 py-3 rounded-2xl border max-w-xs">
